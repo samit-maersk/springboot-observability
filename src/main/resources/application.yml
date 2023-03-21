@@ -1,0 +1,28 @@
+spring:
+  main:
+    web-application-type: reactive
+  application:
+    name: @project.name@
+#  security:
+#    oauth2:
+#      resourceserver:
+#        jwt:
+#          jwk-set-uri: https://myhost.net/oauth2/mau/connect/jwk_uri
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
