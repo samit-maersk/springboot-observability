@@ -1,36 +1,26 @@
 package net.samitkumar.springbootobservability;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.micrometer.observation.ObservationRegistry;
-//import io.micrometer.observation.ObservationTextPublisher;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-//import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-//import org.springframework.security.core.context.SecurityContext;
-//import org.springframework.security.oauth2.jwt.Jwt;
-//import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.observability.micrometer.Micrometer;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
-//import java.util.Optional;
 import java.util.List;
-import java.util.Optional;
 import java.util.Random;
 import java.util.function.Supplier;
 
@@ -84,7 +74,7 @@ class Handlers {
 	public Mono<ServerResponse> hello(ServerRequest request) {
 		var name = request.pathVariable("name");
 		if (hasText(name)) {
-			return ServerResponse.ok().body(greetingService.greeting(name), List.class);
+			return ServerResponse.ok().body(greetingService.greeting(name), Greeting.class);
 		}
 		var name1 = request.queryParam("name").orElse("default name");
 		return ServerResponse.ok().body(greetingService.greeting(name1), Greeting.class);
@@ -158,6 +148,9 @@ class GreetingService {
 		Long lat = latency.get();
 		return Mono.just(new Greeting(name))
 				.delayElement(Duration.ofMillis(lat))
+				.name("GreetingService.greeting")
+				.tag("latency", lat > 250 ? "high" : "low")
+				.tap(Micrometer.observation(registry))
 				;
 	}
 }
@@ -184,6 +177,7 @@ class UserService {
 	}
 
 	public Mono<Users> userById(int id) {
+
 		return jsonPlaceHolderWebClient
 				.get()
 				.uri("/users", uriBuilder -> uriBuilder.queryParam("id", id).build())
@@ -195,6 +189,26 @@ class UserService {
 					return Mono.empty();
 				})
 				.next()
+				.flatMap(user -> {
+					//call the needed service and fill the data
+					return Mono.zip(
+							todoService.byUserId(String.valueOf(user.id())).collectList(),
+							postsService.byUserId(String.valueOf(user.id())).collectList(),
+							albumService.byUserId(String.valueOf(user.id())).collectList()
+					).map(zip -> Users.builder()
+								.id(user.id())
+								.address(user.address())
+								.company(user.company())
+								.email(user.email())
+								.name(user.name())
+								.phone(user.phone())
+								.username(user.username())
+								.website(user.website())
+								.todos(zip.getT1())
+								.posts(zip.getT2())
+								.albums(zip.getT3())
+								.build());
+				})
 				/*
 				.flatMap(user -> {
 					//do multiple call ang gather all other necessary data
@@ -211,6 +225,7 @@ class UserService {
 class PostsService {
 	final WebClient jsonPlaceHolderWebClient;
 	public Flux<Posts> byUserId(String id) {
+		log.info("PostsService.byUserId({})", id);
 		return jsonPlaceHolderWebClient
 				.get()
 				.uri("/posts", uriBuilder -> uriBuilder.queryParam("userId", id).build())
@@ -229,6 +244,7 @@ class PostsService {
 class AlbumService {
 	final WebClient jsonPlaceHolderWebClient;
 	public Flux<Albums> byUserId(String id) {
+		log.info("AlbumService.byUserId({})",id);
 		return jsonPlaceHolderWebClient
 				.get()
 				.uri("/albums", uriBuilder -> uriBuilder.queryParam("userId", id).build())
@@ -246,6 +262,7 @@ class AlbumService {
 class TodoService {
 	final WebClient jsonPlaceHolderWebClient;
 	public Flux<Todos> byUserId(String id) {
+		log.info("TodoService.byUserId({})", id);
 		return jsonPlaceHolderWebClient
 				.get()
 				.uri("/todos", uriBuilder -> uriBuilder.queryParam("userId", id).build())
