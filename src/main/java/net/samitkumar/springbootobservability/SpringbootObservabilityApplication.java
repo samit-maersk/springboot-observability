@@ -8,6 +8,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -15,6 +16,7 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.observability.micrometer.Micrometer;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -44,7 +46,7 @@ public class SpringbootObservabilityApplication {
 	RouterFunction route(Handlers handlers) {
 		return RouterFunctions
 				.route()
-				.GET("hello/{name}", handlers::hello)
+				.GET("hello", handlers::hello)
 				.path("/user", pathBuilder -> pathBuilder
 						.GET("", handlers::user)
 						.GET("/{id}", handlers::userById))
@@ -71,13 +73,15 @@ public class SpringbootObservabilityApplication {
 class Handlers {
 	final GreetingService greetingService;
 	final UserService userService;
+
 	public Mono<ServerResponse> hello(ServerRequest request) {
-		var name = request.pathVariable("name");
-		if (hasText(name)) {
-			return ServerResponse.ok().body(greetingService.greeting(name), Greeting.class);
+
+		var type = request.queryParam("type").orElse("");
+		if(type.matches("^(FIRSTNAME|MIDDLENAME|LASTNAME)$")) {
+			return ServerResponse.ok().body(greetingService.greeting(type), Greeting.class);
+		} else {
+			throw new ResponseStatusException(HttpStatusCode.valueOf(400), "must match the type=FIRSTNAME|MIDDLENAME|LASTNAME");
 		}
-		var name1 = request.queryParam("name").orElse("default name");
-		return ServerResponse.ok().body(greetingService.greeting(name1), Greeting.class);
 	}
 
 	public Mono<ServerResponse> user(ServerRequest request) {
@@ -130,8 +134,8 @@ record Users(int id, String name, String username, String email, Address address
 @Configuration
 class WebClientConfig {
 	@Bean
-	WebClient jsonPlaceHolderWebClient() {
-		return WebClient.builder()
+	WebClient jsonPlaceHolderWebClient(WebClient.Builder builder) {
+		return builder
 				.baseUrl("https://jsonplaceholder.typicode.com/")
 				.defaultHeader("content-type", "application/json")
 				.build();
@@ -145,10 +149,19 @@ class GreetingService {
 	private final ObservationRegistry registry;
 
 	public Mono<Greeting> greeting(String name) {
+
 		Long lat = latency.get();
-		return Mono.just(new Greeting(name))
+		var result = switch(name) {
+			case "FIRSTNAME" -> "John";
+			case "MIDDLENAME" -> "Martin";
+			case "LASTNAME" -> "Doe";
+			default -> "UNKNOWN";
+		};
+
+		return Mono.just(new Greeting(result))
 				.delayElement(Duration.ofMillis(lat))
 				.name("GreetingService.greeting")
+				.tag("type", name)
 				.tag("latency", lat > 250 ? "high" : "low")
 				.tap(Micrometer.observation(registry))
 				;

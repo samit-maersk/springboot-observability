@@ -12,7 +12,6 @@ spring:
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
-
 management:
   endpoint:
     health:
@@ -23,9 +22,17 @@ management:
       exposure:
         include: prometheus
   metrics:
+#    enable:
+#      http:
+#        client:
+#          requests: false
     distribution:
       percentiles-histogram:
         http.server.requests: true
   tracing:
     sampling:
       probability: 1.0
+
+server:
+  error:
+    include-message: always
