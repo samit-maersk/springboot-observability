@@ -30,8 +30,12 @@ management:
       percentiles-histogram:
         http.server.requests: true
   tracing:
+    enabled: true
     sampling:
       probability: 1.0
+#  zipkin:
+#    tracing:
+#      endpoint:
 
 server:
   error:
