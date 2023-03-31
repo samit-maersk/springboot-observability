@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
@@ -25,7 +26,9 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
+import static org.springframework.http.HttpStatusCode.valueOf;
 import static org.springframework.util.StringUtils.hasText;
 
 @SpringBootApplication
@@ -50,6 +53,17 @@ public class SpringbootObservabilityApplication {
 				.path("/user", pathBuilder -> pathBuilder
 						.GET("", handlers::user)
 						.GET("/{id}", handlers::userById))
+				.after((request, response) -> {
+					var params = request.queryParams().toSingleValueMap();
+					var pathWithQueryParam = request.queryParams().toSingleValueMap().keySet().stream().map(key -> String.format("%s=%s",key, params.get(key))).collect(Collectors.joining(","));
+					if(response.statusCode().isError()) {
+						log.error("{}?{} {}", request.requestPath(),pathWithQueryParam,response.statusCode().value());
+					} else {
+						log.info("{}?{} {}", request.requestPath(),pathWithQueryParam,response.statusCode().value());
+					}
+
+					return response;
+				})
 				.build();
 	}
 
@@ -80,7 +94,11 @@ class Handlers {
 		if(type.matches("^(FIRSTNAME|MIDDLENAME|LASTNAME)$")) {
 			return ServerResponse.ok().body(greetingService.greeting(type), Greeting.class);
 		} else {
-			throw new ResponseStatusException(HttpStatusCode.valueOf(400), "must match the type=FIRSTNAME|MIDDLENAME|LASTNAME");
+			//throw new ResponseStatusException(HttpStatusCode.valueOf(400), "must match the type=FIRSTNAME|MIDDLENAME|LASTNAME");
+			return ServerResponse.badRequest().body(
+					Mono.error(new ResponseStatusException(valueOf(400), "must match the type=FIRSTNAME|MIDDLENAME|LASTNAME")),
+					Mono.class);
+
 		}
 	}
 
@@ -132,9 +150,11 @@ record Users(int id, String name, String username, String email, Address address
 }
 
 @Configuration
+@RequiredArgsConstructor
 class WebClientConfig {
+	final WebClient.Builder builder;
 	@Bean
-	WebClient jsonPlaceHolderWebClient(WebClient.Builder builder) {
+	WebClient jsonPlaceHolderWebClient() {
 		return builder
 				.baseUrl("https://jsonplaceholder.typicode.com/")
 				.defaultHeader("content-type", "application/json")
