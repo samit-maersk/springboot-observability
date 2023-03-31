@@ -8,10 +8,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
@@ -53,18 +51,20 @@ public class SpringbootObservabilityApplication {
 				.path("/user", pathBuilder -> pathBuilder
 						.GET("", handlers::user)
 						.GET("/{id}", handlers::userById))
-				.after((request, response) -> {
-					var params = request.queryParams().toSingleValueMap();
-					var pathWithQueryParam = request.queryParams().toSingleValueMap().keySet().stream().map(key -> String.format("%s=%s",key, params.get(key))).collect(Collectors.joining(","));
-					if(response.statusCode().isError()) {
-						log.error("{}?{} {}", request.requestPath(),pathWithQueryParam,response.statusCode().value());
-					} else {
-						log.info("{}?{} {}", request.requestPath(),pathWithQueryParam,response.statusCode().value());
-					}
-
-					return response;
-				})
+				.after((request, response) -> logReqRes(request, response))
 				.build();
+	}
+
+	private ServerResponse logReqRes(ServerRequest request, ServerResponse response) {
+		var params = request.queryParams().toSingleValueMap();
+		var pathWithQueryParam = request.queryParams().toSingleValueMap().keySet().stream().map(key -> String.format("%s=%s",key, params.get(key))).collect(Collectors.joining(","));
+		if(response.statusCode().isError()) {
+			log.error("{}?{} {}", request.requestPath(),pathWithQueryParam, response.statusCode().value());
+		} else {
+			log.info("{}?{} {}", request.requestPath(),pathWithQueryParam, response.statusCode().value());
+		}
+
+		return response;
 	}
 
 	/*public Mono<String> getClaims() {
