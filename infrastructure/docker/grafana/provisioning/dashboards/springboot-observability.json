@@ -24,6 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
+  "id": 2,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -80,7 +81,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "s"
         },
         "overrides": []
       },
@@ -173,7 +175,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "s"
         },
         "overrides": []
       },
@@ -1263,9 +1266,9 @@
       },
       "gridPos": {
         "h": 10,
-        "w": 23,
+        "w": 24,
         "x": 0,
-        "y": 25
+        "y": 22
       },
       "id": 21,
       "options": {
@@ -1371,13 +1374,13 @@
     "list": []
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-1h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "springboot-observability",
   "uid": "zeZXX5BVk",
-  "version": 1,
+  "version": 8,
   "weekStart": ""
 }

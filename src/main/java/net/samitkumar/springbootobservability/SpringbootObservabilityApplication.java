@@ -27,7 +27,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.HttpStatusCode.valueOf;
-import static org.springframework.util.StringUtils.hasText;
 
 @SpringBootApplication
 @Slf4j
@@ -163,12 +162,16 @@ class WebClientConfig {
 }
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 class GreetingService {
 	private final Supplier<Long> latency = () -> new Random().nextLong(500);
 	private final ObservationRegistry registry;
 
 	public Mono<Greeting> greeting(String name) {
+
+		var randomInt = new Random().nextInt(100);
+		log.info("Random Ints={}", randomInt);
 
 		Long lat = latency.get();
 		var result = switch(name) {
