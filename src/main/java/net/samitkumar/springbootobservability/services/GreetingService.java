@@ -1,5 +1,6 @@
 package net.samitkumar.springbootobservability.services;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 @Service
@@ -18,11 +20,14 @@ import java.util.function.Supplier;
 public class GreetingService {
     private final Supplier<Long> latency = () -> new Random().nextLong(500);
     private final ObservationRegistry registry;
-
+    private final MeterRegistry meterRegistry;
     public Mono<Greeting> greeting(String name) {
 
         var randomInt = new Random().nextInt(100);
         log.info("Random Ints={}", randomInt);
+        //customised gauge
+        AtomicInteger myGauge = meterRegistry.gauge("randomInt", new AtomicInteger(0));
+        myGauge.set(randomInt);
 
         Long lat = latency.get();
         var result = switch (name) {
