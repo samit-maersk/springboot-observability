@@ -1,25 +1,40 @@
 # springboot-observability
 
-Inspired From:
+To generate some load to get some metrics, use below commands:
+
+for `/hello` endpoint
+
+```shell
+for VARIABLE in FIRSTNAME LASTNAME MIDDLENAME;do curl http://localhost:8080/hello\?type\=$VARIABLE;done
+
+(or)
+
+while true;do for VARIABLE in FIRSTNAME LASTNAME MIDDLENAME;do curl http://localhost:8080/hello\?type\=$VARIABLE;done;sleep 1; done
+```
+
+for `/user/{id}`
+
+```shell
+for VARIABLE in 1 2 3 4 5 6 7 8 9 10;do curl http://localhost:8080/user/$VARIABLE;done
+
+(or)
+
+while true;do for VARIABLE in 1 2 3 4 5 6 7 8 9 10;do curl http://localhost:8080/user/$VARIABLE;done;sleep 1; done
+``` 
+
+
+
+This Example are Inspired From:
 
 - [https://tanzu.vmware.com/developer/guides/observability-reactive-spring-boot-3/](https://tanzu.vmware.com/developer/guides/observability-reactive-spring-boot-3/)
 - [https://github.com/blueswen/spring-boot-observability](https://github.com/blueswen/spring-boot-observability)
 - [micrometer](https://micrometer.io/docs/observation)
 - [loki](https://grafana.com/docs/loki/latest/logql/metric_queries/)
 - [prometheus](https://prometheus.io/docs/prometheus/latest/querying/examples/)
-- [jsonplaceholder](https://jsonplaceholder.typicode.com/) To cover WebClient scenario.
+- [jsonplaceholder](https://jsonplaceholder.typicode.com/) - This mocked service is used , Just to get some metrics from WebClient call.
 - [about springboot prometheus metrics](https://tanzu.vmware.com/developer/guides/observability-reactive-spring-boot-3/)
 - [custom metric for counter, gauge , Timer & Summary](https://autsoft.net/en/defining-custom-metrics-in-a-spring-boot-application-using-micrometer/)
 - [Types of metrics in prometheus](https://www.youtube.com/watch?v=nJMRmhbY5hY&list=LL&index=2)
-
-
-
-Run the below script to get some metrics: 
-
-```shell
-while true; do curl http://localhost:8080/hello?type=FIRSTNAME ; sleep 1; done
-localhost:8080/user/3
-```
 
 ## The 4 Types Of Prometheus Metrics
 
@@ -97,4 +112,5 @@ histogram_quantile(.95,sum(rate(rquest_duration_bucket[5m])) by (le))
 ```
 
 **Summaries**
+
 Histograms and Summaries are quite similar but it's recommend to use Histograms based on the situation and requirements.
