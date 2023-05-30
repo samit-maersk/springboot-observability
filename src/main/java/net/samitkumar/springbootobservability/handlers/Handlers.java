@@ -6,6 +6,8 @@ import net.samitkumar.springbootobservability.models.Users;
 import net.samitkumar.springbootobservability.services.GreetingService;
 import net.samitkumar.springbootobservability.services.UserService;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.server.ResponseStatusException;
@@ -26,10 +28,10 @@ public class Handlers {
         if (type.matches("^(FIRSTNAME|MIDDLENAME|LASTNAME)$")) {
             return ServerResponse.ok().body(greetingService.greeting(type), Greeting.class);
         } else {
-            //throw new ResponseStatusException(HttpStatusCode.valueOf(400), "must match the type=FIRSTNAME|MIDDLENAME|LASTNAME");
-            return ServerResponse.badRequest().body(
+            throw new ResponseStatusException(HttpStatusCode.valueOf(400), "must match the type=FIRSTNAME|MIDDLENAME|LASTNAME");
+            /*return ServerResponse.badRequest().body(
                     Mono.error(new ResponseStatusException(valueOf(400), "must match the type=FIRSTNAME|MIDDLENAME|LASTNAME")),
-                    Mono.class);
+                    Mono.class);*/
 
         }
     }

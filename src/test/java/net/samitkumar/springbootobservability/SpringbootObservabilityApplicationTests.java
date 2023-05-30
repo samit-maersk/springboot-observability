@@ -1,5 +1,6 @@
 package net.samitkumar.springbootobservability;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -9,6 +10,8 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 class SpringbootObservabilityApplicationTests {
@@ -22,12 +25,17 @@ class SpringbootObservabilityApplicationTests {
 @ExtendWith(SpringExtension.class)
 class SimpleTest {
 	@Test
-	void flixZipTest() {
+	void fluxZipTest() {
 		Mono number = Flux.just(1,2,3,4,5).collectList();
 		Mono string = Flux.just("a","b","c","d").collectList();
 		Mono
 				.zip(number,string,NumberString::new)
 				.subscribe((e) -> System.out.println(e));
+	}
+	@Test
+	void nullCastTest() {
+		assertEquals(null, (String)null);
+		assertEquals(null, (Throwable)null);
 	}
 }
 
