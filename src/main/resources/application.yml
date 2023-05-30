@@ -12,6 +12,7 @@ spring:
 logging:
   pattern:
     level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+    #level: "{\"time\":\"%d{dd MMM E HH:mm:ss.SSS}\", \"TraceId\":\"%X{traceId:-}\", \"SpanId\":\"%X{spanId:-}\", \"source\":\"%logger{35}:%L\", \"level\":\"%-5level\", \"message\":\"%replace(%m%wEx{6}){'[\r\n]+', '\\n'}%nopex\"}%n"
 management:
   endpoint:
     health:
